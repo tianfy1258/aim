@@ -6,9 +6,10 @@ from .logger import *
 from .exception import *
 import io
 from PIL import Image
-from .cache import ZipFileCache
+from .cache import ZipFileCache,ZipImageFileCache
 
 ZIP_CACHE = ZipFileCache()
+IMAGE_CACHE = ZipImageFileCache()
 
 
 def get_zipfile(dataset_name: str):
@@ -28,7 +29,10 @@ def get_zipfile(dataset_name: str):
 
 def extract_one_image(zfile: zipfile.ZipFile, filename: str):
     try:
-        image = zfile.read(filename)
+        image = IMAGE_CACHE.get(f"{id(zfile)}{filename}",None)
+        if image is None:
+            image = zfile.read(filename)
+            IMAGE_CACHE.set(f"{id(zfile)}{filename}", image)
     except Exception as e:
         LOGGER.error(f"抽取文件失败：{e}")
         raise CustomException(f"抽取文件失败")

@@ -17,7 +17,10 @@ def upload(request):
         os.mkdir(UPLOAD_PATH)
     file_path = fr"{UPLOAD_PATH}\{upload_token}_{file_obj.name}"
     with open(file_path, 'wb') as f:
-        for line in file_obj.chunks(chunk_size=1024 * 1024 * 2):
+        total = file_obj.size
+        chunk_size = 1024 * 1024 * 512
+        for i,line in enumerate(file_obj.chunks(chunk_size=chunk_size)):
+            LOGGER.debug(f"write: {(i + 1) * chunk_size} / {total}")
             f.write(line)
         f.close()
     LOGGER.info(f"文件写入: {file_path}")
@@ -105,7 +108,7 @@ def after_upload_dataset(request):
             if os.path.exists(filepath):
                 os.remove(filepath)
                 LOGGER.info(f"删除 {filepath}")
-        return error_response({}, res)
+        return error_response({}, res,duration=5000)
 
     return success_response(res)
 

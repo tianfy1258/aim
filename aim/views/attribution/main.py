@@ -6,19 +6,26 @@ import random as r
 from aim.utils import parse_model
 import torch
 from captum.attr import visualization as viz
+
 IMAGE_CACHE = ImageFileCache()
 ATTRIBUTION_CACHE = AttributionCache()
+ATTRIBUTE_RESULT_CACHE = AttributeResultCache()
+
 
 class BaseAttribution:
     """
     基类归因对象，实现了通用方法
     具体归因算法，只需要实现attribute方法即可，案例见下方IntegratedGradients类
     """
+
     def __init__(self, req: dict):
         self.model_id = req['model_id']
         self.options = req['options']
+        self.is_noise_tunnel = req['is_noise_tunnel']
+        self.noise_tunnel_options = req['noise_tunnel_options']
         self.visualize = req['visualize']
         self.sign = req['sign']
+        self.attribution = req['attribution']
         self.dataset_id = req['dataset_id']
         self.sample_method = req['sample_method']
         self.sample_num = req['sample_num']
@@ -33,7 +40,9 @@ class BaseAttribution:
         # 加载模型，net, func, classes
         self.model, self.func, self.classes = parse_model(deep_model.model_filename,
                                                           deep_model.model_classname,
-                                                          deep_model.model_processor)
+                                                          deep_model.model_processor,
+                                                          is_use_function=deep_model.is_use_function
+                                                          )
 
     # 对内接口，不对外
     def attribute(self, tensor_image: torch.Tensor, label: int) -> np.ndarray:
@@ -46,10 +55,23 @@ class BaseAttribution:
     # 对内接口，不对外
     def attribute_image_features(self, algorithm, input: torch.Tensor, target: int, **kwargs):
         self.model.zero_grad()
-        tensor_attributions = algorithm.attribute(input,
-                                                  target=target,
-                                                  **kwargs
-                                                  )
+        input.requires_grad_(True)
+        if self.is_noise_tunnel:
+            from captum.attr import NoiseTunnel
+            algorithm = NoiseTunnel(algorithm)
+            tensor_attributions = algorithm.attribute(
+                input,
+                target=target,
+                nt_type=self.noise_tunnel_options["nt_type"],
+                nt_samples=self.noise_tunnel_options["nt_samples"],
+                stdevs=float(self.noise_tunnel_options["stdevs"]),
+            )
+
+        else:
+            tensor_attributions = algorithm.attribute(input,
+                                                      target=target,
+                                                      **kwargs
+                                                      )
 
         return tensor_attributions
 
@@ -58,7 +80,6 @@ class BaseAttribution:
 
         # 从缓存中获取zip数据集文件
         zfile = get_zipfile(self.dataset.dataset_filename)
-
 
         # 根据采样方法获得要分析的图片samples
         samples = None
@@ -83,29 +104,52 @@ class BaseAttribution:
             image_arr: np.ndarray = np.array(image)
             # 使用模型的processor对tensor进行处理，得到tensor格式的处理后图片
             tensor_image: torch.Tensor = self.func(image_arr)
+            # 对原图片进行resize
+            image_arr = np.array(image.resize(tensor_image.shape[1:]))
             # 如果不是4维，多加一个Batch维度
             if len(tensor_image.shape) == 3:
                 tensor_image = tensor_image.unsqueeze(0)
-
             # 获得模型对该图片的分类结果（int值）
             # (1,C,H,W) -> (1,output_dim)
             with torch.no_grad():
-                _outputs = self.model(tensor_image)
+                _outputs: torch.Tensor = self.model(tensor_image)
+            if not isinstance(_outputs, torch.Tensor):
+                raise CustomException(f"模型输出为{type(_outputs)}，应该为torch.Tensor")
+            if not (_outputs.shape[0] == 1 and len(_outputs.shape) == 2):
+                raise CustomException(f"模型输出为大小为{tuple(_outputs.shape)}，应该为(1,标签个数)")
             # (1,output_dim) -> int
             _, output = torch.max(_outputs, 1)
             index = output.item()
-            score = torch.softmax(_outputs, 1)[0,index].item()
+            score = torch.softmax(_outputs, 1)[0, index].item()
             # 获得模型对该图片的分类
             predict_label = self.classes[index]
             # 获得图片本身的分类
             label = self.dataset_df.loc[filename][0]
 
-            # 获取numpy格式的归因结果
+
+
+
+            # 计算归因结果并写入缓存
+
+            key = md5(
+                f"{self.model_id}"
+                f"{self.dataset_id}"
+                f"{self.options}"
+                f"{self.is_noise_tunnel}"
+                f"{self.noise_tunnel_options}"
+                f"{filename}"
+                f"{self.attribution}"
+            )
             a = time.time()
-            attr: np.ndarray = self.attribute(tensor_image, index)
-            print(time.time() - a)
+            attr: np.ndarray = ATTRIBUTE_RESULT_CACHE.get(key,None)
+            if attr is None:
+                # 获取numpy格式的归因结果
+                attr: np.ndarray = self.attribute(tensor_image, index)
+                ATTRIBUTE_RESULT_CACHE.set(key,attr)
+            LOGGER.debug(f"归因耗时：{time.time() - a}s")
+
             # 对归因结果attr进行维度处理 (1,C,H,W) -> (H,W,C)
-            attr = attr.squeeze().permute(1, 2, 0).numpy()
+            attr = attr.squeeze().permute(1, 2, 0).detach().numpy()
             # 对结果可视化，将归因结果处理为PIL.Image格式的attr_image
             fig = viz.visualize_image_attr(attr, image_arr, method=self.visualize, sign=self.sign,
                                            show_colorbar=True, title="", use_pyplot=False)
@@ -146,10 +190,72 @@ class IntegratedGradients(BaseAttribution):
 
     def attribute(self, tensor_image: torch.Tensor, label: int) -> np.ndarray:
         from captum.attr import IntegratedGradients
-        ig = ATTRIBUTION_CACHE.get(f"IntegratedGradients{self.model_id}",None)
+        ig = ATTRIBUTION_CACHE.get(f"IntegratedGradients{self.model_id}", None)
         if ig is None:
             ig = IntegratedGradients(self.model)
             ATTRIBUTION_CACHE.set(f"IntegratedGradients{self.model_id}", ig)
         # attr: (H,W,C)
-        attr = self.attribute_image_features(ig, input=tensor_image, target=label, baselines=tensor_image * 0)
+        attr = self.attribute_image_features(ig,
+                                             input=tensor_image,
+                                             target=label,
+                                             baselines=tensor_image * 0,
+                                             n_steps=self.options["n_steps"],
+                                             method=self.options["method"])
+        return attr
+
+
+class Saliency(BaseAttribution):
+    def __init__(self, req: dict):
+        super().__init__(req)
+
+    def attribute(self, tensor_image: torch.Tensor, label: int) -> np.ndarray:
+        from captum.attr import Saliency
+        ig = ATTRIBUTION_CACHE.get(f"Saliency{self.model_id}", None)
+        if ig is None:
+            ig = Saliency(self.model)
+            ATTRIBUTION_CACHE.set(f"Saliency{self.model_id}", ig)
+        # attr: (H,W,C)
+        attr = self.attribute_image_features(ig,
+                                             input=tensor_image,
+                                             target=label)
+        return attr
+
+
+class DeepLift(BaseAttribution):
+    def __init__(self, req: dict):
+        super().__init__(req)
+
+    def attribute(self, tensor_image: torch.Tensor, label: int) -> np.ndarray:
+        from captum.attr import DeepLift
+        ig = ATTRIBUTION_CACHE.get(f"DeepLift{self.model_id}", None)
+        if ig is None:
+            ig = DeepLift(self.model)
+            ATTRIBUTION_CACHE.set(f"DeepLift{self.model_id}", ig)
+        # attr: (H,W,C)
+        attr = self.attribute_image_features(ig,
+                                             input=tensor_image,
+                                             target=label)
+        return attr
+
+
+class Occlusion(BaseAttribution):
+    def __init__(self, req: dict):
+        super().__init__(req)
+
+    def attribute(self, tensor_image: torch.Tensor, label: int) -> np.ndarray:
+        from captum.attr import Occlusion
+        ig = ATTRIBUTION_CACHE.get(f"Occlusion{self.model_id}", None)
+        if ig is None:
+            ig = Occlusion(self.model)
+            ATTRIBUTION_CACHE.set(f"Occlusion{self.model_id}", ig)
+        # attr: (H,W,C)
+        sliding_window_shapes = self.options["sliding_window_shapes"]
+        strides = self.options["strides"]
+        attr = self.attribute_image_features(ig,
+                                             input=tensor_image,
+                                             target=label,
+                                             sliding_window_shapes=(3, sliding_window_shapes, sliding_window_shapes),
+                                             strides=(3, strides, strides),
+                                             show_progress=True
+                                             )
         return attr

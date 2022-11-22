@@ -13,9 +13,10 @@ def success_response(response: dict):
     return HttpResponse(json.dumps(response, default=str))
 
 
-def error_response(response: dict, error_message: str = ""):
+def error_response(response: dict, error_message: str = "",duration: int = 3000):
     response['code'] = ERROR_CODE
     response['error_message'] = error_message
+    response['duration'] = duration
     return HttpResponse(json.dumps(response, default=str))
 
 

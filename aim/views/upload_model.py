@@ -68,7 +68,7 @@ def after_upload_model(request):
             if os.path.exists(filepath):
                 os.remove(filepath)
                 LOGGER.info(f"删除 {filepath}")
-        return error_response({}, r)
+        return error_response({}, r,duration=5000)
 
     models, functions, labels_num = r
     res = {
@@ -100,7 +100,7 @@ def check_is_py_valid(request):
         function_index = [x[0] for x in functions].index(image_processor)
     except ValueError as e:
         LOGGER.error(exc_info=True, msg=f"未在{py_name}中找到函数{image_processor}")
-        return error_response({}, f"未在{py_name}中找到函数{image_processor}")
+        return error_response({}, f"未在{py_name}中找到函数{image_processor}",duration=5000)
 
     func = functions[function_index][1]
 
@@ -109,19 +109,19 @@ def check_is_py_valid(request):
         output: torch.Tensor = func(test_numpy)
     except Exception as e:
         LOGGER.error(exc_info=True, msg=f"处理方法调用失败:{e}")
-        return error_response({}, f"处理方法调用失败，{e}")
+        return error_response({}, f"处理方法调用失败，{e}",duration=5000)
 
     if not isinstance(output, torch.Tensor):
         LOGGER.error(f"检测到处理方法输出类型为{type(output)}，应该为torch.Tensor")
-        return error_response({}, f"检测到处理方法输出类型为{type(output)}，应该为torch.Tensor")
+        return error_response({}, f"检测到处理方法输出类型为{type(output)}，应该为torch.Tensor",duration=5000)
 
     if len(output.shape) != 3:
         LOGGER.error(f"检测到处理方法输出维度为{len(output.shape)}，应该为3维")
-        return error_response({}, f"检测到处理方法输出维度为{len(output.shape)}，应该为3维")
+        return error_response({}, f"检测到处理方法输出维度为{len(output.shape)}，应该为3维",duration=5000)
 
     if output.shape[0] != 3:
         LOGGER.error(f"检测到处理方法输出的结果不是(C, H, W)形式，请保证通道数量在第一维")
-        return error_response({}, f"检测到处理方法输出的结果不是(C, H, W)形式，请保证通道数量在第一维")
+        return error_response({}, f"检测到处理方法输出的结果不是(C, H, W)形式，请保证通道数量在第一维",duration=5000)
 
     return success_response({})
 

@@ -119,6 +119,12 @@ class DeepModel(models.Model):
     model_name = models.CharField(max_length=255)
     # 模型描述
     model_description = models.CharField(max_length=255, null=True)
+    # 模型训练数据集
+    model_dataset = models.CharField(max_length=255, null=True)
+    # 是否为预定义模型
+    is_predefine = models.BooleanField(default=False)
+    # 是否为从方法中获取模型
+    is_use_function = models.BooleanField(default=False)
     # 模型大小
     model_size = models.BigIntegerField()
     # 模型类别 [LeNet、AlexNet ...]
