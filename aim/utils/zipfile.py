@@ -6,7 +6,7 @@ from .logger import *
 from .exception import *
 import io
 from PIL import Image
-from .cache import ZipFileCache,ZipImageFileCache
+from .cache import ZipFileCache, ZipImageFileCache
 
 ZIP_CACHE = ZipFileCache()
 IMAGE_CACHE = ZipImageFileCache()
@@ -27,21 +27,21 @@ def get_zipfile(dataset_name: str):
     return zfile
 
 
-def extract_one_image(zfile: zipfile.ZipFile, filename: str):
+def extract_one_image(zfile: zipfile.ZipFile, filename: str, use_cache=True):
     try:
-        image = IMAGE_CACHE.get(f"{id(zfile)}{filename}",None)
-        if image is None:
+        if use_cache:
+            image = IMAGE_CACHE.get(f"{id(zfile)}{filename}", None)
+            if image is None:
+                image = zfile.read(filename)
+                IMAGE_CACHE.set(f"{id(zfile)}{filename}", image)
+        else:
             image = zfile.read(filename)
-            IMAGE_CACHE.set(f"{id(zfile)}{filename}", image)
     except Exception as e:
         LOGGER.error(f"抽取文件失败：{e}")
         raise CustomException(f"抽取文件失败")
-    LOGGER.debug(f"取出{filename}")
-    return Image.open(io.BytesIO(image))
+    return Image.open(io.BytesIO(image)).convert("RGB")
 
 
-def extract_images(zfile: zipfile.ZipFile, filenames: List[str]):
-    return [
-        extract_one_image(zfile, x)
-        for x in filenames
-    ]
+def extract_images(zfile: zipfile.ZipFile, filenames: List[str], use_cache=True):
+    for x in filenames:
+        yield extract_one_image(zfile, x, use_cache)

@@ -1,25 +1,58 @@
 from django.core.cache import cache
 import time
-from aim.utils import md5,LOGGER
+from aim.utils import md5, LOGGER
 
-# ZIP对象不能用缓存，报错 cannot serialize '_io.BufferedReader' object
-# 这里单独适配下，就简单return
+"""
+
+1.ZIP对象不能用缓存，报错 cannot serialize '_io.BufferedReader' object，这里单独适配下，就简单return
+2.BaseCoverage对象，这里也用dict，因为缓存的不是静态对象，而是动态的
+
+
+
+"""
+
+
 class ZipFileCache:
     def __init__(self):
         self.key = "zipfile_"
         self.cache = {}
+        LOGGER.info("ZipFileCache: 创建dict引用缓存")
 
     def set(self, key, value, expired_time=600):
         LOGGER.debug(f"缓存：⭕ 存入zip对象:{key}")
         self.cache[fr"{self.key}{key}"] = value
 
     def get(self, key, defult_value=None):
-        r =  self.cache.get(fr"{self.key}{key}", defult_value)
+        r = self.cache.get(fr"{self.key}{key}", defult_value)
         if r is not None:
             LOGGER.debug(f"缓存：✔ 找到缓存的zip对象:{key}")
         else:
             LOGGER.debug(f"缓存：❌ 未找到zip对象:{key}")
         return r
+
+
+class CoverageCache:
+    def __init__(self):
+        self.key = "coverage_"
+        self.cache = {}
+        LOGGER.info("CoverageCache: 创建dict引用缓存")
+
+    def set(self, key, value):
+        LOGGER.debug(f"缓存：⭕ 存入覆盖测试对象:{key}")
+        self.cache[fr"{self.key}{key}"] = value
+
+    def get(self, key, defult_value=None):
+        r = self.cache.get(fr"{self.key}{key}", defult_value)
+        if r is not None:
+            LOGGER.debug(f"缓存：✔ 找到缓存的覆盖测试对象:{key}")
+        else:
+            LOGGER.debug(f"缓存：❌ 未找到覆盖测试对象:{key}")
+        return r
+
+    def remove(self, key):
+        del self.cache[fr"{self.key}{key}"]
+        LOGGER.debug(f"缓存：✔ 删除缓存的覆盖测试对象:{key}")
+
 
 class ImageFileCache:
     def __init__(self):
@@ -42,7 +75,6 @@ class ImageFileCache:
         return r
 
 
-
 class ZipImageFileCache:
     def __init__(self):
         self.key = "zipimagefile_"
@@ -63,7 +95,6 @@ class ZipImageFileCache:
         return r
 
 
-
 class DeepModelCache:
     def __init__(self):
         self.key = "deepmodel_"
@@ -81,6 +112,7 @@ class DeepModelCache:
         else:
             LOGGER.debug(f"缓存：❌ 未找到模型对象:{key}")
         return r
+
 
 class AttributionCache:
     def __init__(self):
@@ -100,6 +132,7 @@ class AttributionCache:
             LOGGER.debug(f"缓存：❌ 未找到归因对象:{key}")
         return r
 
+
 class AttributeResultCache:
     def __init__(self):
         self.key = "attribute_result_"
@@ -107,6 +140,7 @@ class AttributeResultCache:
     def set(self, key, value, expired_time=7200):
         LOGGER.debug(f"缓存：⭕ 存入归因结果:{key}")
         cache.set(fr"{self.key}{key}", value, expired_time)
+
     def get(self, key, defult_value=None):
         r = cache.get(fr"{self.key}{key}", defult_value)
         if r is not None:

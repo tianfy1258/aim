@@ -70,9 +70,13 @@ urlpatterns = [
     # 可解释分析相关
     path('attribute', attribute),
     path('getImage',get_image),
+    # 覆盖测试相关
+    path('coverage', coverage),
+    path('getStatus', get_status),
+
     # 选项获取相关
     path('getDatasetOptions',
-         DataQuery.query_builder(Dataset, ["dataset_id", "dataset_name"], use_additional_projection=False)),
+         DataQuery.query_builder(Dataset, ["dataset_id", "dataset_name","dataset_instances"], use_additional_projection=False)),
     path('getModelOptions',
          DataQuery.query_builder(DeepModel, ["model_id", "model_name"], use_additional_projection=False))
 

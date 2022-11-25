@@ -24,7 +24,7 @@ def parse_model(filename: str, classname: str, funcname: str, is_use_function: b
     # 此时假定文件符合要求，文件已经预先校验
     model_path = fr"{MODEL_PATH}\{filename}.pt"
     class_path = fr"{MODEL_PATH}\{filename}.txt"
-    net = MODEL_CACHE.get(model_path, None)
+    net = MODEL_CACHE.get(filename, None)
     if net is None:
         try:
             if not is_use_function:
@@ -56,7 +56,7 @@ def parse_model(filename: str, classname: str, funcname: str, is_use_function: b
             else:
                 net.load_state_dict(torch.load(model_path))
             LOGGER.debug(fr"加载模型成功")
-            MODEL_CACHE.set(model_path, net)
+            MODEL_CACHE.set(filename, net)
         except Exception as e:
             LOGGER.error(fr"模型文件加载失败！", exc_info=True)
             raise CustomException("模型文件加载失败！")
@@ -78,5 +78,7 @@ def parse_model(filename: str, classname: str, funcname: str, is_use_function: b
     except Exception as e:
         LOGGER.error(fr"模型类别读取失败！", exc_info=True)
         raise CustomException("模型类别读取失败！")
-
+    LOGGER.debug(
+        str(net.eval())
+    )
     return net.eval(), func, classes

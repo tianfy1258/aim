@@ -19,8 +19,6 @@ def attribute(request):
         elif attribution_method == "Occlusion":
             attribution = Occlusion(req)
 
-
-
         res = {
             "data": attribution.attribute_from_dataset()
         }
