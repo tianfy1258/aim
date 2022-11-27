@@ -24,7 +24,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPLOAD_PATH = BASE_DIR + r"\upload"
 DATA_PATH = BASE_DIR + r"\dataset"
 MODEL_PATH = BASE_DIR + r"\deep_model"
-for path in [UPLOAD_PATH, DATA_PATH, MODEL_PATH]:
+TENSOR_SPACE_PATH = BASE_DIR + r"\tensor_space"
+for path in [UPLOAD_PATH, DATA_PATH, MODEL_PATH,TENSOR_SPACE_PATH]:
     if not os.path.exists(path):
         os.makedirs(path)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -56,7 +57,6 @@ INSTALLED_APPS = [
     'aim.apps.AimConfig',
 ]
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -64,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     # 'silk.middleware.SilkyMiddleware',
 ]
 
@@ -156,6 +157,7 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, FRONTEND_ROOT + '/assets/'),
     os.path.join(BASE_DIR, 'deep_model/'),
     os.path.join(BASE_DIR, 'dataset/'),
+    os.path.join(BASE_DIR, 'tensor_space/'),
 )
 
 # 增加跨域忽略

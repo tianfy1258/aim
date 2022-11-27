@@ -73,7 +73,9 @@ urlpatterns = [
     # 覆盖测试相关
     path('coverage', coverage),
     path('getStatus', get_status),
-
+    # 可视化相关
+    path('getFile/<str:fn>', get_file),
+    path('getJsonImage', get_json_imagenet_1k),
     # 选项获取相关
     path('getDatasetOptions',
          DataQuery.query_builder(Dataset, ["dataset_id", "dataset_name", "dataset_instances"],

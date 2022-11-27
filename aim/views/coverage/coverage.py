@@ -7,12 +7,6 @@ import random
 COVERAGE_CACHE = CoverageCache()
 
 
-def SuperCoverage(req):
-    choice = random.choice([1, 2, 3, 4, 5, 6])
-    cheese = [0, NeuronCoverage(req), DeepGini(req), LayerSCoverage(req),
-              LayerECoverage(req), GraphCoverage(req), LinkCoverage(req)]
-    return cheese[choice]
-
 
 def coverage(request):
     if request.method != 'POST':
@@ -27,18 +21,8 @@ def coverage(request):
         if base_coverage is None:
             if coverage_method == 'Neuron Coverage':
                 base_coverage = NeuronCoverage(req)
-            elif coverage_method == 'DeepGini':
-                base_coverage = DeepGini(req)
-            elif coverage_method == 'Layer Structure Coverage':
-                base_coverage = LayerSCoverage(req)
-            elif coverage_method == 'Layer Element Coverage':
-                base_coverage = LayerECoverage(req)
-            elif coverage_method == 'Graph Coverage':
-                base_coverage = GraphCoverage(req)
-            elif coverage_method == 'Link Coverage':
-                base_coverage = LinkCoverage(req)
-            elif coverage_method == 'Super Coverage':
-                base_coverage = SuperCoverage(req)
+            elif coverage_method == '???':
+                pass
             COVERAGE_CACHE.set(task_key, base_coverage)
         res = {
             "data": base_coverage.coverage_from_dataset()
@@ -52,6 +36,9 @@ def coverage(request):
     return success_response(res)
 
 
+status_dict = {}
+
+
 def get_status(request):
     if request.method != 'GET':
         return error_response({})
@@ -59,7 +46,13 @@ def get_status(request):
     current_index = int(request.GET.get("current_index"))
     base_coverage: BaseCoverage = COVERAGE_CACHE.get(task_key, None)
     if base_coverage is None:
-        return error_response({}, error_message="任务状态获取失败！")
+        v = status_dict.get(task_key, 0)
+        status_dict[task_key] = v + 1
+        LOGGER.warn(f"重新获取状态! retry : {v} / 5")
+        if status_dict[task_key] == 5:
+            del status_dict[task_key]
+            return error_response({}, error_message="任务状态获取失败！")
+        return retry_response({})
     if base_coverage.is_finished():
         COVERAGE_CACHE.remove(task_key)
     return success_response({

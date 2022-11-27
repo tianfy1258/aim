@@ -2,7 +2,9 @@ upload/
 dataset/
 deep_model/
 dist/
+tensor_space/
 __pycache__
 .idea
 templates/
 
+*.zip

@@ -2,7 +2,7 @@ from aim.models import *
 from aim.utils import *
 from django.http import FileResponse
 
-
+# deprecated
 def dataset_download(request):
     dataset_id = request.GET["id"]
     try:
