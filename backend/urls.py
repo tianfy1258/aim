@@ -16,12 +16,12 @@ Including another URLconf
 from django.shortcuts import render
 
 from django.views.generic import TemplateView
-from django.urls import path,include
+from django.urls import path, include
 from aim.views import *
 from aim.utils import DataQuery
 import inspect
 from aim import models
-from backend.settings import DEBUG,SILK
+from backend.settings import DEBUG, SILK
 
 # 所有Models的查询接口
 database_query = [
@@ -69,14 +69,15 @@ urlpatterns = [
     path('createModel', create_model),
     # 可解释分析相关
     path('attribute', attribute),
-    path('getImage',get_image),
+    path('getImage', get_image),
     # 覆盖测试相关
     path('coverage', coverage),
     path('getStatus', get_status),
 
     # 选项获取相关
     path('getDatasetOptions',
-         DataQuery.query_builder(Dataset, ["dataset_id", "dataset_name","dataset_instances"], use_additional_projection=False)),
+         DataQuery.query_builder(Dataset, ["dataset_id", "dataset_name", "dataset_instances"],
+                                 use_additional_projection=False)),
     path('getModelOptions',
          DataQuery.query_builder(DeepModel, ["model_id", "model_name"], use_additional_projection=False))
 

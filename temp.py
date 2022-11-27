@@ -2,8 +2,10 @@
 
 from aim.models import *
 from faker import Faker
+
 fk = Faker(locale="zh-CN")
 import random as r
+
 li = []
 count = 2567
 for i in range(count):

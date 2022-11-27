@@ -12,8 +12,8 @@ MODEL_CACHE = DeepModelCache()
 
 
 def parse_model(filename: str, classname: str, funcname: str, is_use_function: bool) -> Tuple[torch.nn.Module,
-                                                                                           Callable,
-                                                                                           List]:
+                                                                                              Callable,
+                                                                                              List]:
     """
     :param filename: 模型文件名
     :param classname: 模型类名
@@ -39,7 +39,7 @@ def parse_model(filename: str, classname: str, funcname: str, is_use_function: b
         try:
             net: torch.nn.Module = Net()
             # densenet
-            if isinstance(net,torchvision.models.DenseNet):
+            if isinstance(net, torchvision.models.DenseNet):
                 LOGGER.info("加载DenseNet，单独处理模型加载方式")
                 import re
                 pattern = re.compile(

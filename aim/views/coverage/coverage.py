@@ -2,8 +2,16 @@ from aim.utils import *
 from aim.models import *
 from .main import *
 from .utils import NC
+import random
 
 COVERAGE_CACHE = CoverageCache()
+
+
+def SuperCoverage(req):
+    choice = random.choice([1, 2, 3, 4, 5, 6])
+    cheese = [0, NeuronCoverage(req), DeepGini(req), LayerSCoverage(req),
+              LayerECoverage(req), GraphCoverage(req), LinkCoverage(req)]
+    return cheese[choice]
 
 
 def coverage(request):
@@ -19,8 +27,18 @@ def coverage(request):
         if base_coverage is None:
             if coverage_method == 'Neuron Coverage':
                 base_coverage = NeuronCoverage(req)
-            elif coverage_method == '???':
-                pass
+            elif coverage_method == 'DeepGini':
+                base_coverage = DeepGini(req)
+            elif coverage_method == 'Layer Structure Coverage':
+                base_coverage = LayerSCoverage(req)
+            elif coverage_method == 'Layer Element Coverage':
+                base_coverage = LayerECoverage(req)
+            elif coverage_method == 'Graph Coverage':
+                base_coverage = GraphCoverage(req)
+            elif coverage_method == 'Link Coverage':
+                base_coverage = LinkCoverage(req)
+            elif coverage_method == 'Super Coverage':
+                base_coverage = SuperCoverage(req)
             COVERAGE_CACHE.set(task_key, base_coverage)
         res = {
             "data": base_coverage.coverage_from_dataset()

@@ -70,7 +70,7 @@ class BaseCoverage:
                 tensor_image = tensor_image.unsqueeze(0)
             res = self.coverage(tensor_image)
             self.result.append(res)
-            LOGGER.debug(f"res： {res}")
+            # LOGGER.debug(f"res： {res}")
 
         return self.result[-1]
 
@@ -80,6 +80,61 @@ class NeuronCoverage(BaseCoverage):
         from .utils import NC
         super().__init__(req)
         self.coverage_model = NC(self.model)
+
+    def coverage(self, tensor_image: torch.Tensor):
+        self.coverage_model.update_coverage(tensor_image, self.threshold)
+        return self.coverage_model.neuron_coverage_rate()
+
+
+class DeepGini(BaseCoverage):
+    def __init__(self, req: dict):
+        from .utils import Gini
+        super().__init__(req)
+        self.coverage_model = Gini(self.model)
+
+    def coverage(self, tensor_image: torch.Tensor):
+        self.coverage_model.update_coverage(tensor_image, self.threshold)
+        return self.coverage_model.neuron_coverage_rate()
+
+
+class LayerSCoverage(BaseCoverage):
+    def __init__(self, req: dict):
+        from .utils import LSC
+        super().__init__(req)
+        self.coverage_model = LSC(self.model)
+
+    def coverage(self, tensor_image: torch.Tensor):
+        self.coverage_model.update_coverage(tensor_image, self.threshold)
+        return self.coverage_model.neuron_coverage_rate()
+
+
+class LayerECoverage(BaseCoverage):
+    def __init__(self, req: dict):
+        from .utils import LEC
+        super().__init__(req)
+        self.coverage_model = LEC(self.model)
+
+    def coverage(self, tensor_image: torch.Tensor):
+        self.coverage_model.update_coverage(tensor_image, self.threshold)
+        return self.coverage_model.neuron_coverage_rate()
+
+
+class GraphCoverage(BaseCoverage):
+    def __init__(self, req: dict):
+        from .utils import GC
+        super().__init__(req)
+        self.coverage_model = GC(self.model)
+
+    def coverage(self, tensor_image: torch.Tensor):
+        self.coverage_model.update_coverage(tensor_image, self.threshold)
+        return self.coverage_model.neuron_coverage_rate()
+
+
+class LinkCoverage(BaseCoverage):
+    def __init__(self, req: dict):
+        from .utils import LC
+        super().__init__(req)
+        self.coverage_model = LC(self.model)
 
     def coverage(self, tensor_image: torch.Tensor):
         self.coverage_model.update_coverage(tensor_image, self.threshold)
