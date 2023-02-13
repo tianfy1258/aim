@@ -6,9 +6,6 @@ from aim.utils import md5, LOGGER
 
 1.ZIP对象不能用缓存，报错 cannot serialize '_io.BufferedReader' object，这里单独适配下，就简单return
 2.BaseCoverage对象，这里也用dict，因为缓存的不是静态对象，而是动态的
-
-
-
 """
 
 
@@ -16,7 +13,7 @@ class ZipFileCache:
     def __init__(self):
         self.key = "zipfile_"
         self.cache = {}
-        LOGGER.info("ZipFileCache: 创建dict引用缓存")
+        LOGGER.debug("ZipFileCache: 创建dict引用缓存")
 
     def set(self, key, value, expired_time=600):
         LOGGER.debug(f"缓存：⭕ 存入zip对象:{key}")
@@ -35,7 +32,7 @@ class CoverageCache:
     def __init__(self):
         self.key = "coverage_"
         self.cache = {}
-        LOGGER.info("CoverageCache: 创建dict引用缓存")
+        LOGGER.debug("CoverageCache: 创建dict引用缓存")
 
     def set(self, key, value):
         LOGGER.debug(f"缓存：⭕ 存入覆盖测试对象:{key}")

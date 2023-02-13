@@ -31,7 +31,6 @@ class NC:
                 if np.mean(scaled[num_neuron, ...]) > threshold \
                         and not self.model_layer_dict.get((layer_name[i], num_neuron)):
                     self.model_layer_dict[(layer_name[i], num_neuron)] = True
-
     def _scale(self, input, rmax=1, rmin=0):
         input = input.cpu().detach().numpy()
         input_std = (input - np.min(input)) / (input.max() - input.min())

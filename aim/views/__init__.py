@@ -6,3 +6,4 @@ from .attribution.attribution import *
 from .coverage.coverage import *
 from aim.views.tensorspace.file import *
 from .attribution.image import *
+from .test.test import get_test_image_file

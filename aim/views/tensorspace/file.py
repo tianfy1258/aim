@@ -30,27 +30,39 @@ def get_file(request, fn):
     return response
 
 
-LOGGER.warn("[tensorspace] 使用写死的数据集id。因为模块默认使用ImageNet_1k数据集，该数据在数据库中的id为5578，请保证存在，否则会报错")
-# 加载数据集标签信息
-dataset = Dataset.objects.get(dataset_id=5578)
-dataset_df = pd.read_csv(fr"{DATA_PATH}\{dataset.dataset_filename}.csv")
-dataset_df = dataset_df.set_index("filename")
+dataset = None
+dataset_df = None
+is_loaded = False
+
+
+def load_global_vars():
+    global dataset, dataset_df,is_loaded
+    if not is_loaded:
+        # 加载数据集标签信息
+        LOGGER.warn("[tensorspace] 使用写死的数据集id。因为模块默认使用ImageNet_1k数据集，该数据在数据库中的id为5578，请保证存在，否则会报错")
+        dataset = Dataset.objects.get(dataset_id=5578)
+        dataset_df = pd.read_csv(fr"{DATA_PATH}\{dataset.dataset_filename}.csv")
+        dataset_df = dataset_df.set_index("filename")
+        is_loaded = True
+
 
 def _scale(input, rmax=1, rmin=0):
     input_std = (input - np.min(input)) / (input.max() - input.min())
     input_scaled = input_std * (rmax - rmin) + rmin
     return input_scaled
 
+
 def get_json_imagenet_1k(request):
     """
     随机返回一张json格式的图片
     (PIL.Image -> np.array -> np.array(flatten) -> json)
     """
+    load_global_vars()
     width = int(request.GET.get("width", 224))
     height = int(request.GET.get("height", 224))
-    scale = request.GET.get("scale","false")
+    scale = request.GET.get("scale", "false")
     scale = True if scale == "true" else False
-
+    # dataset = Dataset.objects.get(dataset_id=5582) # debug
     zfile = get_zipfile(dataset.dataset_filename)
     fileinfo = r.choice(zfile.filelist)
     # fileinfo = zfile.filelist[r.choice([6801])] # debug
@@ -63,5 +75,6 @@ def get_json_imagenet_1k(request):
     image_arr = image_arr.ravel()
     return success_response({
         "data": image_arr.tolist(),
-        "label": dataset_df.loc[filename][0]
+        "label": dataset_df.loc[filename][0],
+        # "label": "plane", # debug
     })

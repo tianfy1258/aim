@@ -6,5 +6,7 @@ tensor_space/
 __pycache__
 .idea
 templates/
+venv/
+
 
 *.zip

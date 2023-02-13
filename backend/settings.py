@@ -14,7 +14,6 @@ from pathlib import Path
 from configparser import ConfigParser
 import matplotlib
 matplotlib.use('agg')
-print("matplotlib.backend: " + matplotlib.get_backend())
 
 CONFIG_PARSER = ConfigParser()
 CONFIG_PARSER.read('config.ini')
@@ -93,13 +92,20 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': DATABASE_CONFIG["db_name"],
+    #     'USER': DATABASE_CONFIG["db_user"],
+    #     'PASSWORD': DATABASE_CONFIG["db_password"],
+    #     'HOST': DATABASE_CONFIG["db_host"],
+    #     'PORT': DATABASE_CONFIG["db_port"]
+    # },
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': DATABASE_CONFIG["db_name"],
-        'USER': DATABASE_CONFIG["db_user"],
-        'PASSWORD': DATABASE_CONFIG["db_password"],
-        'HOST': DATABASE_CONFIG["db_host"],
-        'PORT': DATABASE_CONFIG["db_port"]
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'OPTIONS': {
+            'timeout': 20,
+        }
     },
 }
 # CACHES = {
@@ -225,7 +231,7 @@ LOGGING = {
         'custom': {
             'handlers': ['console'],
             'propagate': True,
-            'level': 'DEBUG',
+            'level': 'WARNING',
         }
     }
 }
