@@ -17,16 +17,16 @@ class DataQuery:
     """
 
     @staticmethod
-    def query_builder(model, projection: list = None, use_additional_projection:bool = True,additional_projection: list = None, handler=None):
+    def query_builder(model, projection: list = None, use_additional_projection:bool = True,additional_projection: list = None, handler=None,after_data_return=None):
         if not additional_projection:
             additional_projection = ["create_user__username", "update_user__username"]
         if not projection:
             projection = [f.attname for f in model._meta.concrete_fields]
         if additional_projection and use_additional_projection:
             projection += additional_projection
-        return DataQuery(model.objects, projection, handler).query
+        return DataQuery(model.objects, projection, handler,after_data_return).query
 
-    def __init__(self, objects: Manager, projection, handler=None):
+    def __init__(self, objects: Manager, projection, handler=None,after_data_return=None):
         self.objects = objects
         self.pageSize = 100
         self.pageNum = 1
@@ -35,6 +35,7 @@ class DataQuery:
         self.handler = handler
         self.projection = projection
         self.request = None
+        self.after_data_return = after_data_return
 
     def set_request(self, request: HttpRequest, ):
         if request.method == 'GET':
@@ -71,6 +72,8 @@ class DataQuery:
             "data": list(li),
             "total": count
         }
+        if self.after_data_return:
+            self.after_data_return(res)
 
         return success_response(res)
 

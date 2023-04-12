@@ -83,6 +83,8 @@ def after_upload_dataset(request):
             label = temp_df.loc[fn.filename]["label"]
             if label is None or label == "":
                 return f"csv文件中，{fn.filename}的标签为空"
+        # calculate hashcode about all filenams
+        hashcode = md5("".join(temp_filename_set))
 
         LOGGER.debug("作简单处理，重新写入csv")
         df["filename"] = df["filename"].str.strip()
@@ -96,6 +98,7 @@ def after_upload_dataset(request):
         res['db_instances'] = len(zip_file.filelist)
         res["db_tags_num"] = len(tags_set)
         res["db_tags"] = list(tags_set)
+        res["hashcode"] = hashcode
         res["csv_path"] = fr"{UPLOAD_PATH}\{upload_token}_{csv_name}"
         res["zip_path"] = fr"{UPLOAD_PATH}\{upload_token}_{zip_name}"
 
@@ -124,6 +127,7 @@ def create_dataset(request):
         db_description = req['db_description']
         db_instances = req['db_instances']
         db_tags_num = req['db_tags_num']
+        hashcode = req['hashcode']
         csv_path = req['csv_path']
         zip_path = req['zip_path']
         create_user = User.objects.get(user_id=request.session.get('user_id'))
@@ -145,6 +149,7 @@ def create_dataset(request):
             dataset_size=os.path.getsize(zip_path),
             dataset_instances=db_instances,
             labels_num=db_tags_num,
+            hashcode=hashcode,
             create_user=create_user,
             update_user=create_user
         )

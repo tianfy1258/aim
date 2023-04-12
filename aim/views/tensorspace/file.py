@@ -57,7 +57,11 @@ def get_json_imagenet_1k(request):
     随机返回一张json格式的图片
     (PIL.Image -> np.array -> np.array(flatten) -> json)
     """
-    load_global_vars()
+    try:
+        load_global_vars()
+    except Exception as e:
+        LOGGER.error(exc_info=True, msg=f"加载数据集信息失败: {e}")
+        return error_response({}, "加载数据集信息失败")
     width = int(request.GET.get("width", 224))
     height = int(request.GET.get("height", 224))
     scale = request.GET.get("scale", "false")

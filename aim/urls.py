@@ -16,7 +16,7 @@ Including another URLconf
 from django.shortcuts import render
 
 from django.views.generic import TemplateView
-from django.urls import path, include,re_path
+from django.urls import path, include, re_path
 from aim.views import *
 from aim.utils import DataQuery
 import inspect
@@ -77,12 +77,31 @@ urlpatterns = [
     path('getFile/<str:fn>', get_file),
     path('getJsonImage', get_json_imagenet_1k),
     path('empty', lambda x: success_response({})),
+    # 度量相关
+    path('createModelMeasurementTask', model_measurement_task_create),
+    path('createDatasetMeasurementTask', dataset_measurement_task_create),
+    # 任务相关
+    path('getModelMeasurementTaskList', DataQuery.query_builder(
+        ModelMeasurementTask,
+        after_data_return=query_redis_task,
+        use_additional_projection=True,
+        additional_projection=['dataset_id__dataset_name', 'model_id__model_name',"create_user__username", "update_user__username"]
+    )),
+    path('getDatasetMeasurementTaskList', DataQuery.query_builder(
+        DatasetMeasurementTask,
+        after_data_return=query_redis_task,
+        use_additional_projection=True,
+        additional_projection=['dataset_id__dataset_name', "create_user__username",
+                               "update_user__username"]
+    )),
+    path('terminateModelMeasurementTask', terminate_model_measurement_task),
+    path('terminateDatasetMeasurementTask', terminate_dataset_measurement_task),
     # 选项获取相关
     path('getDatasetOptions',
-         DataQuery.query_builder(Dataset, ["dataset_id", "dataset_name", "dataset_instances"],
+         DataQuery.query_builder(Dataset, ["dataset_id", "dataset_name", "dataset_instances","hashcode"],
                                  use_additional_projection=False)),
     path('getModelOptions',
          DataQuery.query_builder(DeepModel, ["model_id", "model_name"], use_additional_projection=False)),
-    # 测(zao)试(jia)相关
+    # 测试相关
     path('getTestImage/<str:fn>', get_test_image_file),
 ]

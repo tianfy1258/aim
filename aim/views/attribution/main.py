@@ -125,10 +125,6 @@ class BaseAttribution:
             predict_label = self.classes[index]
             # 获得图片本身的分类
             label = self.dataset_df.loc[filename][0]
-
-
-
-
             # 计算归因结果并写入缓存
 
             key = md5(

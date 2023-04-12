@@ -7,6 +7,11 @@ class NC:
         self.model = model
         self.all_layer_name = self._get_all_layer_name()
         self.model_layer_dict = dict()
+        self.all_out = []
+        # register hooks
+        for name, modules in self.model.named_modules():
+            if name in self.all_layer_name:
+                modules.register_forward_hook(lambda module,input,output: self.all_out.append(output))
 
     def _get_all_layer_name(self):
         all_layer_name = []
@@ -31,6 +36,7 @@ class NC:
                 if np.mean(scaled[num_neuron, ...]) > threshold \
                         and not self.model_layer_dict.get((layer_name[i], num_neuron)):
                     self.model_layer_dict[(layer_name[i], num_neuron)] = True
+
     def _scale(self, input, rmax=1, rmin=0):
         input = input.cpu().detach().numpy()
         input_std = (input - np.min(input)) / (input.max() - input.min())
@@ -45,15 +51,6 @@ class NC:
         return covered_neurons, total_neurons, covered_neurons / float(total_neurons)
 
     def _get_forward_value(self, data):
-        all_out = []
-
-        def forward_hook(module, input, output):
-            all_out.append(output)
-
-        for name, modules in self.model.named_modules():
-            if name in self.all_layer_name:
-                modules.register_forward_hook(forward_hook)
-
+        self.all_out = []
         _ = self.model(data)
-        return all_out
-
+        return self.all_out

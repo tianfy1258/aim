@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     # 'silk',
+    'celery',
     'aim.apps.AimConfig',
 ]
 MIDDLEWARE = [
@@ -109,17 +110,28 @@ DATABASES = {
     },
 }
 # CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         # 使用的redis数据
-#         "LOCATION": "redis://127.0.0.1:6379",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#             # 连接池最大数值
-#             "CONNECTION_KWARGS": {"max_connection": 100},
-#             # "PASSWORD":'12334'redis的密码
-#         }
-#     }
+    # "default": {
+    #     "BACKEND": "django_redis.cache.RedisCache",
+    #     # 使用的redis数据
+    #     "LOCATION": "redis://127.0.0.1:6379",
+    #     "OPTIONS": {
+    #         "CLIENT_CLASS": "django_redis.client.DefaultClient",
+    #         # 连接池最大数值
+    #         "CONNECTION_KWARGS": {"max_connection": 100},
+    #         # "PASSWORD":'12334'redis的密码
+    #     }
+    # },
+    # "redis":{
+    #     "BACKEND": "django_redis.cache.RedisCache",
+    #     # 使用的redis数据
+    #     "LOCATION": "redis://127.0.0.1:6379",
+    #     "OPTIONS": {
+    #         "CLIENT_CLASS": "django_redis.client.DefaultClient",
+    #         # 连接池最大数值
+    #         "CONNECTION_KWARGS": {"max_connection": 100},
+    #         # "PASSWORD":'12334'redis的密码
+    #     }
+    # },
 # }
 
 # Password validation
@@ -231,9 +243,18 @@ LOGGING = {
         'custom': {
             'handlers': ['console'],
             'propagate': True,
-            'level': 'WARNING',
+            'level': 'DEBUG',
         }
     }
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+##########  CELERY  #####################
+# Broker配置，使用Redis作为消息中间件
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+# BACKEND配置，这里使用Redis
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+# 结果序列化方案
+CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_TASK_TIME_LIMIT = 60
+CELERY_TASK_ALWAYS_EAGER = False

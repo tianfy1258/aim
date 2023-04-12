@@ -73,7 +73,7 @@ def parse_model(filename: str, classname: str, funcname: str, is_use_function: b
     try:
         with open(class_path) as f:
             classes = f.readlines()
-        classes = [x for x in classes if x]
+        classes = [x.strip() for x in classes if x]
         LOGGER.debug(fr"读取模型类别成功")
     except Exception as e:
         LOGGER.error(fr"模型类别读取失败！", exc_info=True)
