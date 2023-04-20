@@ -11,6 +11,7 @@ class NC:
         # register hooks
         for name, modules in self.model.named_modules():
             if name in self.all_layer_name:
+
                 modules.register_forward_hook(lambda module,input,output: self.all_out.append(output))
 
     def _get_all_layer_name(self):

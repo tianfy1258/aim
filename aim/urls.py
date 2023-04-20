@@ -73,6 +73,7 @@ urlpatterns = [
     # 覆盖测试相关
     path('coverage', coverage),
     path('getStatus', get_status),
+    path('terminateCoverageTask', terminate_coverage_task),
     # 可视化相关
     path('getFile/<str:fn>', get_file),
     path('getJsonImage', get_json_imagenet_1k),

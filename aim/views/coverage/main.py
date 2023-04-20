@@ -34,7 +34,8 @@ class BaseCoverage:
                                                           deep_model.model_processor,
                                                           is_use_function=deep_model.is_use_function
                                                           )
-
+        self.interrupted = False
+        self.timer = time.time()
         self.result = []
 
     def coverage(self, tensor_image: torch.Tensor) -> Tuple[int, int, float]:
@@ -48,6 +49,9 @@ class BaseCoverage:
     def is_finished(self):
         return len(self.result) == self.sample_count
 
+    def interrupt(self):
+        self.interrupted = True
+
     # 对外接口，用于调用
     def coverage_from_dataset(self):
         # 从缓存中获取zip数据集文件
@@ -59,6 +63,9 @@ class BaseCoverage:
 
         # 将结果保存至self.result
         for filename, image in zip(samples, extract_images(zfile, samples, use_cache=False)):
+            # 被打断或者超过5秒未获取结果，停止计算
+            if self.interrupted or time.time() - self.timer > 5:
+                break
             # filename: str
             # image: PIL.Image
             # 获取numpy格式图片
@@ -74,6 +81,9 @@ class BaseCoverage:
 
         return self.result[-1]
 
+    def get_result(self):
+        self.timer = time.time()
+        return self.result
 
 class NeuronCoverage(BaseCoverage):
     def __init__(self, req: dict):

@@ -74,11 +74,15 @@ def get_json_imagenet_1k(request):
     LOGGER.debug(f"随机选择图片:{filename}")
     image = extract_one_image(zfile, filename, False)
     image_arr: np.ndarray = np.array(image.resize((width, height)))
-    if scale:
-        image_arr = _scale(image_arr)
+
+    # 现在改为前端scale
+    # if scale:
+    #     image_arr = _scale(image_arr)
+
     image_arr = image_arr.ravel()
     return success_response({
         "data": image_arr.tolist(),
         "label": dataset_df.loc[filename][0],
+        "filename":filename
         # "label": "plane", # debug
     })
