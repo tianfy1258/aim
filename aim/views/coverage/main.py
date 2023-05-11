@@ -13,14 +13,15 @@ class BaseCoverage:
     具体归因算法，只需要实现coverage方法即可，案例见下方NeuronCoverage类
     """
 
-    def __init__(self, req: dict):
+    def __init__(self, req: dict, coverage_model):
         self.model_id = req['model_id']
         self.options = req['options']
         self.coverage_method = req['coverage']
         self.dataset_id = req['dataset_id']
         self.sample_count = req['sample_count']
         self.threshold = req['threshold']
-        self.coverage_model = None
+        self.max_threshold = req['max_threshold']
+        self.min_threshold = req['min_threshold']
         # 加载模型信息
         deep_model = DeepModel.objects.get(model_id=self.model_id)
         # 获取数据集信息
@@ -34,6 +35,7 @@ class BaseCoverage:
                                                           deep_model.model_processor,
                                                           is_use_function=deep_model.is_use_function
                                                           )
+        self.coverage_model = coverage_model(self.model)
         self.interrupted = False
         self.timer = time.time()
         self.result = []
@@ -44,7 +46,13 @@ class BaseCoverage:
         :param tensor_image: 输入图片，torch.Tensor格式
         :return: 覆盖数，总数，覆盖率
         """
-        pass
+        # 不是所有参数都有用，但是为了保持接口一致，这里保留了所有参数
+        # 某个模型只会用到特定的某个参数
+        self.coverage_model.update_coverage(tensor_image,
+                                            threshold=self.threshold,
+                                            min_threshold=self.min_threshold,
+                                            max_threshold=self.max_threshold)
+        return  self.coverage_model.neuron_coverage_rate()
 
     def is_finished(self):
         return len(self.result) == self.sample_count
@@ -84,68 +92,3 @@ class BaseCoverage:
     def get_result(self):
         self.timer = time.time()
         return self.result
-
-class NeuronCoverage(BaseCoverage):
-    def __init__(self, req: dict):
-        from .utils import NC
-        super().__init__(req)
-        self.coverage_model = NC(self.model)
-
-    def coverage(self, tensor_image: torch.Tensor):
-        self.coverage_model.update_coverage(tensor_image, self.threshold)
-        return self.coverage_model.neuron_coverage_rate()
-
-
-class DeepGini(BaseCoverage):
-    def __init__(self, req: dict):
-        from .utils import Gini
-        super().__init__(req)
-        self.coverage_model = Gini(self.model)
-
-    def coverage(self, tensor_image: torch.Tensor):
-        self.coverage_model.update_coverage(tensor_image, self.threshold)
-        return self.coverage_model.neuron_coverage_rate()
-
-
-class LayerSCoverage(BaseCoverage):
-    def __init__(self, req: dict):
-        from .utils import LSC
-        super().__init__(req)
-        self.coverage_model = LSC(self.model)
-
-    def coverage(self, tensor_image: torch.Tensor):
-        self.coverage_model.update_coverage(tensor_image, self.threshold)
-        return self.coverage_model.neuron_coverage_rate()
-
-
-class LayerECoverage(BaseCoverage):
-    def __init__(self, req: dict):
-        from .utils import LEC
-        super().__init__(req)
-        self.coverage_model = LEC(self.model)
-
-    def coverage(self, tensor_image: torch.Tensor):
-        self.coverage_model.update_coverage(tensor_image, self.threshold)
-        return self.coverage_model.neuron_coverage_rate()
-
-
-class GraphCoverage(BaseCoverage):
-    def __init__(self, req: dict):
-        from .utils import GC
-        super().__init__(req)
-        self.coverage_model = GC(self.model)
-
-    def coverage(self, tensor_image: torch.Tensor):
-        self.coverage_model.update_coverage(tensor_image, self.threshold)
-        return self.coverage_model.neuron_coverage_rate()
-
-
-class LinkCoverage(BaseCoverage):
-    def __init__(self, req: dict):
-        from .utils import LC
-        super().__init__(req)
-        self.coverage_model = LC(self.model)
-
-    def coverage(self, tensor_image: torch.Tensor):
-        self.coverage_model.update_coverage(tensor_image, self.threshold)
-        return self.coverage_model.neuron_coverage_rate()

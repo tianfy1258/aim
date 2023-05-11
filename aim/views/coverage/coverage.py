@@ -1,7 +1,7 @@
 from aim.utils import *
 from aim.models import *
 from .main import *
-from .utils import NC
+from .utils import *
 import random
 
 COVERAGE_CACHE = CoverageCache()
@@ -20,8 +20,14 @@ def coverage(request):
     try:
         base_coverage = COVERAGE_CACHE.get(task_key, None)
         if base_coverage is None:
-            if coverage_method == 'Neuron Coverage':
-                base_coverage = NeuronCoverage(req)
+            if coverage_method == 'NC':
+                base_coverage = BaseCoverage(req, NC)
+            elif coverage_method == 'TKNC':
+                base_coverage = BaseCoverage(req, TKNC)
+            elif coverage_method == 'NBC':
+                base_coverage = BaseCoverage(req, NBC)
+            elif coverage_method == 'SNAC':
+                base_coverage = BaseCoverage(req, SNAC)
             elif coverage_method == '???':
                 pass
             COVERAGE_CACHE.set(task_key, base_coverage)
